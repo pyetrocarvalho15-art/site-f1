@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_xp'] = $user['xp'];
         $_SESSION['user_level'] = $user['level'];
         
-        header("Location: dashboard.php");
+        header("Location: dashboardslide2.php");
         exit();
     } else {
         header("Location: login.php?erro=1");

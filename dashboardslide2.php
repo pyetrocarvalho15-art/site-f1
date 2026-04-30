@@ -1,168 +1,122 @@
 <?php
 session_start();
-// Se não estiver logado, volta para o login
+require 'db.php'; // Conecta no banco para pegar o nome e XP
+
+// Se o cara tentar entrar direto sem logar no slide 1, ele é expulso
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
+
+// Pega os dados do Max Verstappen que o config.php criou
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - StudyRank F1</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>StudyRank - Cockpit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background-color: #000; 
-            color: #fff; 
-            font-family: 'Arial', sans-serif;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        /* Faixa vermelha no fundo igual à imagem */
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0; right: 0;
-            width: 40%; height: 100%;
-            background: linear-gradient(135deg, transparent 50%, #e10600 20%);
-            z-index: -1;
-        }
-
-        /* Logo F1 no topo esquerdo */
-        .f1-logo { width: 50px; margin: 20px; }
-
-        /* Card principal cinza escuro */
-        .main-container {
-            background-color: #2d2d2d;
-            border-radius: 30px;
-            margin: 20px auto;
-            padding: 30px;
-            width: 90%;
+        /* TUDO O QUE SERIA O CSS VAI AQUI DENTRO */
+        body { background-color: #000; color: white; font-family: sans-serif; margin: 0; padding: 40px; }
+        
+        /* O fundo cinza igual ao seu Canva */
+        .caixa-principal {
+            background-color: #7d7d7d;
+            border-radius: 40px;
+            display: flex;
             max-width: 1100px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: auto;
+            padding: 30px;
+            min-height: 500px;
+            color: #fff;
         }
 
-        /* Coluna do Perfil (Esquerda) */
-        .profile-section { border-right: 2px solid #444; padding-right: 20px; }
-        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #1a1a1a; margin-bottom: 10px; }
-        .user-name { color: #e10600; font-weight: bold; font-size: 1.4rem; text-transform: uppercase; }
-        .xp-bar-container { background: #1a1a1a; border-radius: 10px; height: 15px; margin: 15px 0; border: 2px solid #555; }
-        .xp-bar-fill { background: #e10600; height: 100%; width: 60%; border-radius: 8px; }
-        .badge-header { background: #4b0000; padding: 5px; font-weight: bold; font-size: 0.8rem; margin-top: 20px; }
-        .badge-icon { width: 50px; margin: 10px 5px; }
+        .perfil { flex: 1; text-align: center; border-right: 2px solid #666; }
+        .foto-piloto { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #e10600; background: #fff; }
+        .nome-piloto { font-family: 'Orbitron', sans-serif; color: #e10600; text-transform: uppercase; }
 
-        /* Coluna dos Quizzes (Centro) */
-        .quiz-title { font-weight: bold; letter-spacing: 1px; }
-        .quiz-item {
-            background: #444;
-            border-radius: 15px;
-            padding: 15px;
+        /* Barra de progresso com o carrinho */
+        .barra-xp {
+            background: #333;
+            height: 20px;
+            border-radius: 20px;
+            margin: 20px auto;
+            width: 80%;
+            position: relative;
+        }
+        .progresso-vermelho {
+            background: #e10600;
+            height: 100%;
+            width: 60%; /* Depois o PHP calcula isso */
+            border-radius: 20px;
+        }
+
+        .quizzes { flex: 1.5; padding: 0 30px; }
+        .card-gp {
+            background: #999;
             margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
             display: flex;
             align-items: center;
-            text-decoration: none;
-            color: #fff;
-            transition: 0.3s;
         }
-        .quiz-item:hover { background: #555; transform: scale(1.02); }
-        .quiz-num { font-size: 2.5rem; font-weight: bold; color: #f1c40f; margin-right: 20px; }
-        .quiz-details h6 { margin: 0; font-weight: bold; }
-        .quiz-details small { color: #2ecc71; font-weight: bold; }
 
-        /* Coluna do Pódio (Direita) */
-        .podium-section { padding-left: 20px; }
-        .table-podium { width: 100%; font-size: 0.9rem; }
-        .table-podium th { color: #888; border-bottom: 1px solid #555; padding-bottom: 10px; }
-        .table-podium td { padding: 10px 0; border-bottom: 1px solid #3d3d3d; }
-        .pos-circle { 
-            width: 25px; height: 25px; border-radius: 50%; border: 2px solid #f1c40f; 
-            display: inline-block; text-align: center; font-weight: bold; color: #f1c40f;
-        }
+        .podio { flex: 1; }
+        .tabela-podio { width: 100%; background: #b1b1b1; color: #000; border-collapse: collapse; border-radius: 10px; overflow: hidden; }
+        .tabela-podio td { padding: 10px; border-bottom: 2px solid #7d7d7d; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg" class="f1-logo" alt="F1">
-
-    <div class="main-container">
-        <div class="row">
-            
-            <div class="col-md-3 text-center profile-section">
-                <img src="https://i.imgur.com/8K0p3Xv.png" class="avatar">
-                <div class="user-name"><?php echo $_SESSION['user_name']; ?></div>
-                
-                <div class="xp-bar-container">
-                    <div class="xp-bar-fill"></div>
-                </div>
-                
-                <div class="d-flex justify-content-between small">
-                    <span>XP: <?php echo $_SESSION['user_xp']; ?></span>
-                    <span>NÍVEL: <?php echo $_SESSION['user_level']; ?></span>
-                </div>
-
-                <p class="mt-3 small text-muted">CONQUISTAS RECENTES:</p>
-                <div class="badge-header">BADGES:</div>
-                <div class="d-flex justify-content-center">
-                    <img src="https://i.imgur.com/w1I8x9v.png" class="badge-icon" title="Iniciante">
-                    <img src="https://i.imgur.com/mO6qf7W.png" class="badge-icon" title="7 dias Streak">
-                    <img src="https://i.imgur.com/vH9jZ5O.png" class="badge-icon" title="Velocidade Máxima">
-                </div>
+<div class="caixa-principal">
+    <div class="perfil">
+        <img src="img/perfil.png" class="foto-piloto" onerror="this.src='https://i.imgur.com/8Yv9D1p.png'">
+        
+        <h2 class="nome-piloto"><?php echo $user['name']; ?></h2>
+        
+        <div class="barra-xp">
+            <div class="progresso-vermelho">
+                <img src="img/carro.png" style="width:40px; position:absolute; right:-15px; top:-10px;" onerror="this.src='https://i.imgur.com/mSQUG5p.png'">
             </div>
-
-            <div class="col-md-5 text-center px-4">
-                <h5 class="quiz-title mb-4">PRÓXIMOS GRAND PRIX<br>QUIZ</h5>
-                
-                <a href="quiz.php?id=1" class="quiz-item">
-                    <div class="quiz-num">1</div>
-                    <div class="quiz-details">
-                        <h6>GP DE PYTHON</h6>
-                        <p class="m-0 small">(Sintaxe Básica)</p>
-                        <small>5 QUESTÕES | +20XP</small>
-                    </div>
-                </a>
-
-                <div class="quiz-item opacity-50">
-                    <div class="quiz-num" style="color: #888">2</div>
-                    <div class="quiz-details"><h6>GP DE JAVASCRIPT 🔒</h6></div>
-                </div>
-
-                <div class="quiz-item opacity-50">
-                    <div class="quiz-num" style="color: #888">3</div>
-                    <div class="quiz-details"><h6>GP DE BANCO DE DADOS 🔒</h6></div>
-                </div>
+        </div>
+        
+        <p>XP: <strong><?php echo $user['xp']; ?></strong> | LVL: <strong><?php echo $user['level']; ?></strong></p>
+        
+        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px;">
+            <div style="text-align:center;">
+                <img src="img/badge1.png" width="40" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3112/3112946.png'">
+                <br><small style="font-size:10px">INICIANTE</small>
             </div>
-
-            <div class="col-md-4 podium-section text-center">
-                <h5 class="fw-bold mb-4">PÓDIO</h5>
-                <table class="table-podium">
-                    <thead>
-                        <tr>
-                            <th>POS.</th>
-                            <th>PILOTO</th>
-                            <th>XP Semanal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="pos-circle">1</span></td><td>SENNACODER</td><td>(360 xp)</td></tr>
-                        <tr style="color: #fff; font-weight: bold;">
-                            <td><span class="pos-circle" style="color: #fff; border-color: #fff;">2</span></td>
-                            <td>VOCÊ</td>
-                            <td>(<?php echo $_SESSION['user_xp']; ?>xp)</td>
-                        </tr>
-                        <tr><td><span class="pos-circle" style="border-color: #888; color: #888;">3</span></td><td>PROSTDEV</td><td>(280xp)</td></tr>
-                        <tr><td><span class="pos-circle" style="border-color: #888; color: #888;">4</span></td><td>POLTCADER</td><td>(270xp)</td></tr>
-                        <tr><td><span class="pos-circle" style="border-color: #888; color: #888;">5</span></td><td>LAMNA</td><td>(260xp)</td></tr>
-                    </tbody>
-                </table>
-                <a href="logout.php" class="btn btn-sm btn-outline-danger mt-4">SAIR DO PADDOCK</a>
+            <div style="text-align:center;">
+                <img src="img/badge2.png" width="40" onerror="this.src='https://cdn-icons-png.flaticon.com/512/179/179249.png'">
+                <br><small style="font-size:10px">7 DIAS</small>
             </div>
-
         </div>
     </div>
+
+    <div class="quizzes">
+        <h3 style="text-align:center">PRÓXIMOS GRAND PRIX</h3>
+        <div class="card-gp"><b style="font-size:25px; color:#ffca28; margin-right:15px">1</b> GP DE PYTHON</div>
+        <div class="card-gp" style="opacity:0.5"><b style="font-size:25px; margin-right:15px">2</b> GP DE JAVASCRIPT 🔒</div>
+    </div>
+
+    <div class="podio">
+        <h3 style="text-align:center">PÓDIO</h3>
+        <table class="tabela-podio">
+            <tr><td>1º</td><td>SENNACODER</td></tr>
+            <tr><td style="background:#ffca28">2º</td><td style="background:#ffca28"><?php echo $user['name']; ?></td></tr>
+            <tr><td>3º</td><td>PROSTDEV</td></tr>
+        </table>
+    </div>
+</div>
+
+<p style="text-align:center; margin-top:20px">
+    <a href="lgout.php" style="color:red; text-decoration:none">SAIR DO SISTEMA</a>
+</p>
 
 </body>
 </html>
