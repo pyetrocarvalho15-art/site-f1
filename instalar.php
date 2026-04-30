@@ -1,8 +1,7 @@
 <?php
 $host = '127.0.0.1';
 $user = 'root';
-$pass = ''; // Verifique se sua senha do MySQL é vazia
-
+$pass = 'alunolab';
 try {
     $pdo = new PDO("mysql:host=$host", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

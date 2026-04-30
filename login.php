@@ -39,15 +39,16 @@
 
         /* Card Cinza Transparente (Glassmorphism) */
         .login-card { 
-            background: rgba(255, 255, 255, 0.2); /* Transparência cinza */
-            backdrop-filter: blur(10px); /* Efeito de vidro */
-            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(15px); 
+            border-radius: 35px;
             padding: 40px;
-            width: 100%;
-            max-width: 380px;
+            width: 90%;
+            max-width: 400px;
             text-align: center;
             z-index: 2;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
         }
 
         .login-title {
@@ -55,50 +56,63 @@
             font-weight: bold;
             letter-spacing: 2px;
             margin-bottom: 30px;
+            text-transform: uppercase;
         }
 
         .label-text {
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             display: block;
+            letter-spacing: 1px;
         }
 
         /* Inputs Arredondados e Cinzas */
         .form-control { 
             background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 50px; /* Bem arredondado como na imagem */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px; 
             color: #fff;
-            padding: 10px 20px;
+            padding: 12px 20px;
             text-align: center;
             margin-bottom: 20px;
         }
 
         .form-control:focus {
             background: rgba(255, 255, 255, 0.2);
+            border-color: #e10600;
             box-shadow: none;
             color: #fff;
         }
 
-        /* Botão Entrar Vermelho Arredondado */
+        /* Botão Entrar Vermelho Arredondado - Agora DENTRO do form */
         .btn-entrar {
             background: linear-gradient(to right, #800000, #e10600, #800000);
             border: none;
             border-radius: 50px;
             color: #fff;
             font-weight: bold;
-            padding: 10px 60px;
-            margin-top: 30px;
-            z-index: 2;
+            padding: 12px 60px;
+            margin-top: 10px;
             text-transform: uppercase;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: 0.3s;
+            cursor: pointer;
         }
 
         .btn-entrar:hover {
+            transform: scale(1.05);
             opacity: 0.9;
             color: #fff;
+        }
+
+        /* Mensagem de erro caso o login falhe */
+        .error-msg {
+            color: #ff4d4d;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -109,19 +123,23 @@
     <div class="login-card">
         <h2 class="login-title">LOGIN</h2>
 
+        <?php if(isset($_GET['erro'])): ?>
+            <p class="error-msg">Piloto não encontrado ou senha inválida!</p>
+        <?php endif; ?>
+
         <form action="login_process.php" method="POST">
             <div class="mb-3">
                 <label class="label-text">EMAIL:</label>
-                <input type="email" name="email" class="form-control" required>
+                <input type="email" name="email" class="form-control" placeholder="exemplo@f1.com" required>
             </div>
             <div class="mb-3">
                 <label class="label-text">SENHA:</label>
-                <input type="password" name="password" class="form-control" required>
+                <input type="password" name="password" class="form-control" placeholder="••••••" required>
             </div>
+            
+            <button type="submit" class="btn btn-entrar">ENTRAR</button>
         </form>
     </div>
-
-    <button type="submit" onclick="document.querySelector('form').submit();" class="btn btn-entrar">ENTRAR</button>
 
 </body>
 </html>

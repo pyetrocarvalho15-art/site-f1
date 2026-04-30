@@ -6,21 +6,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND password = ?");
+    $stmt->execute([$email, $password]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Verificando se o usuário existe e a senha (em produção use password_verify)
-    if ($user && ($password === $user['password'] || password_verify($password, $user['password']))) {
+    if ($user) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
-        $_SESSION['xp'] = $user['xp']; // Exigido no dashboard [cite: 14]
-        $_SESSION['level'] = $user['level'];
+        $_SESSION['user_xp'] = $user['xp'];
+        $_SESSION['user_level'] = $user['level'];
         
         header("Location: dashboard.php");
         exit();
     } else {
-        header("Location: login.php?error=1");
+        header("Location: login.php?erro=1");
         exit();
     }
 }
